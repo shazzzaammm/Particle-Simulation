@@ -21,12 +21,21 @@ const CIRCLE_RADIUS_MIN: f64 = CIRCLE_RADIUS_FACTOR / 2.0;
 
 // Colors
 const BLACK: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
-const WHITE: [f32; 4] = [1.0, 1.0, 1.0, 1.0];
-
+const BLUE_A: [f32; 4] = [0.0, 0.0, 1.0, 1.0];
+const BLUE_B: [f32; 4] = [125.0/255.0, 249.0/255.0, 1.0, 1.0];
 // World constants
 const GRAVITY: Coordinate = Coordinate { x: 0.0, y: 0.0 };
 const FRICTION: f64 = 0.0;
 const COLLISION_ENERGY_LOSS: f64 = 1.0;
+
+// Helper function
+fn lerp_color(a: &[f32; 4], b: &[f32; 4], t: f64) -> [f32; 4] {
+    let mut color: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
+    color[0] = b[0] + ((a[0] - b[0]) * t as f32);
+    color[1] = b[1] + ((a[1] - b[1]) * t as f32);
+    color[2] = b[2] + ((a[2] - b[2]) * t as f32);
+    color
+}
 
 // Structs
 #[derive(Clone, Copy)]
@@ -80,7 +89,7 @@ fn main() {
                     y: random_y,
                 },
                 acc: Coordinate { x: 0.0, y: 0.0 },
-                mass: random_mass + 1.0,
+                mass: random_mass + 0.5,
                 radius: random_mass * CIRCLE_RADIUS_FACTOR + CIRCLE_RADIUS_MIN,
             })
         }
@@ -98,6 +107,17 @@ fn main() {
     let mut gl = GlGraphics::new(opengl);
     let mut events = Events::new(e_settings);
 
+    let mut largest_mass = 0.0;
+    let mut smallest_mass = 200.0;
+    for p in &particles {
+        if p.mass > largest_mass {
+            largest_mass = p.mass;
+        }
+        if p.mass < smallest_mass {
+            smallest_mass = p.mass;
+        }
+    }
+
     while let Some(e) = events.next(&mut window) {
         if let Some(r) = e.render_args() {
             // Render
@@ -105,7 +125,7 @@ fn main() {
                 graphics::clear(BLACK, gl);
                 for p in particles.iter() {
                     graphics::ellipse(
-                        WHITE,
+                        lerp_color(&BLUE_A, &BLUE_B, (p.mass - smallest_mass) / largest_mass),
                         graphics::ellipse::circle(p.pos.x, p.pos.y, p.radius),
                         _c.transform,
                         gl,
